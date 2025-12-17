@@ -18,17 +18,26 @@
     <!-- Compilador Babel (para JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Iconos Lucide (Versión fija para estabilidad) -->
+    <!-- Iconos Lucide -->
     <script src="https://unpkg.com/lucide@0.292.0/dist/umd/lucide.min.js"></script>
     
-    <!-- HTML2Canvas para descargar imagen -->
+    <!-- HTML2Canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* Animaciones personalizadas */
         .animate-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        /* Clase especial para forzar centrado en html2canvas */
+        .center-fix {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding-top: 2px; /* Pequeño ajuste visual para la fuente Inter */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -38,15 +47,10 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- Puente para Iconos Lucide ---
-        // Esto permite usar los iconos como componentes de React sin instalar nada
         const Icon = ({ name, size = 24, className, ...props }) => {
             const iconData = window.lucide?.icons?.[name];
             if (!iconData) return null;
-            
-            // Estructura de Lucide UMD: [tag, attrs, children]
             const [tag, attrs, children] = iconData;
-            
             return (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +73,6 @@
             );
         };
 
-        // Definimos los iconos específicos usados en la app
         const Settings = (p) => <Icon name="Settings" {...p} />;
         const User = (p) => <Icon name="User" {...p} />;
         const X = (p) => <Icon name="X" {...p} />;
@@ -79,13 +82,11 @@
         const Edit3 = (p) => <Icon name="Edit3" {...p} />;
         const Download = (p) => <Icon name="Download" {...p} />;
         const Loader2 = (p) => <Icon name="Loader2" {...p} />;
-        const DollarSign = (p) => <Icon name="DollarSign" {...p} />;
         const Wallet = (p) => <Icon name="Wallet" {...p} />;
         const Save = (p) => <Icon name="Save" {...p} />;
         const Upload = (p) => <Icon name="Upload" {...p} />;
         const Trophy = (p) => <Icon name="Trophy" {...p} />;
         const Plus = (p) => <Icon name="Plus" {...p} />;
-        const Minus = (p) => <Icon name="Minus" {...p} />;
         const Calendar = (p) => <Icon name="Calendar" {...p} />;
         const CreditCard = (p) => <Icon name="CreditCard" {...p} />;
         const ChevronDown = (p) => <Icon name="ChevronDown" {...p} />;
@@ -93,28 +94,17 @@
         const Lock = (p) => <Icon name="Lock" {...p} />;
         const Unlock = (p) => <Icon name="Unlock" {...p} />;
 
-        // --- Aplicación Principal ---
-
         const RifaApp = () => {
-            // Estado para la configuración de la rifa
             const [range, setRange] = useState({ min: 340, max: 379 });
             const [title, setTitle] = useState("Gran Rifa 🔥");
-            const [priceLabel, setPriceLabel] = useState(""); // Texto para la imagen
-            const [ticketValue, setTicketValue] = useState(0); // Valor numérico para cálculos
-            const [drawDate, setDrawDate] = useState(""); // Fecha y hora del sorteo
-            const [bankAlias, setBankAlias] = useState(""); // Alias o CBU
-            
-            // Estado para premios
+            const [priceLabel, setPriceLabel] = useState(""); 
+            const [ticketValue, setTicketValue] = useState(0); 
+            const [drawDate, setDrawDate] = useState(""); 
+            const [bankAlias, setBankAlias] = useState(""); 
             const [prizes, setPrizes] = useState([""]);
-
-            // Estado para las ventas (key = número, value = nombre)
             const [sales, setSales] = useState({});
-            
-            // Estado para el modal de edición/venta
             const [selectedNumber, setSelectedNumber] = useState(null);
             const [buyerName, setBuyerName] = useState("");
-            
-            // Estado para visualización y descarga
             const [viewMode, setViewMode] = useState('admin');
             const [isDownloading, setIsDownloading] = useState(false);
             const [showConfig, setShowConfig] = useState(false);
@@ -122,7 +112,6 @@
             const cardRef = useRef(null);
             const fileInputRef = useRef(null);
 
-            // Cargar datos al iniciar
             useEffect(() => {
                 const savedData = localStorage.getItem('rifaData');
                 if (savedData) {
@@ -142,7 +131,6 @@
                 }
             }, []);
 
-            // Guardar datos
             useEffect(() => {
                 localStorage.setItem('rifaData', JSON.stringify({ range, sales, title, priceLabel, ticketValue, prizes, drawDate, bankAlias }));
                 document.title = `${title} - Gestor de Rifas`; 
@@ -188,7 +176,6 @@
             const handleSaveSale = (e) => {
                 e.preventDefault();
                 if (buyerName.trim() === "") return;
-                
                 setSales(prev => ({ ...prev, [selectedNumber]: buyerName }));
                 setSelectedNumber(null);
                 setBuyerName("");
@@ -226,12 +213,11 @@
             const handleImportData = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const importedData = JSON.parse(e.target.result);
-                        if (confirm("Esto reemplazará los datos actuales con los del archivo. ¿Continuar?")) {
+                        if (confirm("Esto reemplazará los datos actuales. ¿Continuar?")) {
                             if(importedData.range) setRange(importedData.range);
                             if(importedData.sales) setSales(importedData.sales);
                             if(importedData.title) setTitle(importedData.title);
@@ -243,7 +229,7 @@
                             alert("¡Datos cargados correctamente!");
                         }
                     } catch (error) {
-                        alert("Error al leer el archivo. Asegúrate de que sea un backup válido.");
+                        alert("Error al leer el archivo.");
                     }
                 };
                 reader.readAsText(file);
@@ -254,15 +240,24 @@
                 setIsDownloading(true);
                 const previousMode = viewMode;
                 setViewMode('preview');
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 500)); // Un poco más de tiempo para asegurar renderizado
 
                 try {
                     if (cardRef.current && window.html2canvas) {
                         const canvas = await window.html2canvas(cardRef.current, {
                             scale: 2,
-                            backgroundColor: null,
+                            backgroundColor: null, 
                             useCORS: true,
-                            logging: false
+                            logging: false,
+                            allowTaint: true,
+                            scrollX: 0,
+                            scrollY: 0,
+                            // Opciones adicionales para estabilidad
+                            onclone: (clonedDoc) => {
+                                // Asegurar que el elemento clonado sea visible
+                                const clonedCard = clonedDoc.querySelector('[data-card-root]');
+                                if(clonedCard) clonedCard.style.display = 'block';
+                            }
                         });
 
                         const image = canvas.toDataURL("image/png");
@@ -328,7 +323,6 @@
                                                 placeholder="0"
                                                 className="w-full mt-1 p-2 bg-white border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-mono text-green-700 font-bold"
                                             />
-                                            <p className="text-[10px] text-green-600 mt-1">Este valor no sale en la imagen.</p>
                                         </div>
 
                                         <div>
@@ -504,15 +498,16 @@
 
                             <div 
                                 ref={cardRef}
+                                data-card-root
                                 className="w-full max-w-md bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-3xl shadow-2xl relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none transform translate-x-10 -translate-y-10"></div>
 
-                                <div className="bg-white/90 rounded-2xl p-6 min-h-[400px] flex flex-col">
+                                <div className="bg-white rounded-2xl p-6 min-h-[400px] flex flex-col h-full relative z-10">
                                     <div className="text-center mb-6">
                                         <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight leading-none break-words">{title}</h1>
                                         {priceLabel && (
-                                            <div className="inline-flex items-center justify-center bg-yellow-300 text-yellow-900 font-bold px-4 py-1.5 rounded-full text-sm mt-3 shadow-md transform -rotate-1 border-2 border-yellow-100 leading-none">
+                                            <div className="inline-flex items-center justify-center bg-yellow-300 text-yellow-900 font-bold px-4 py-2 rounded-full text-sm mt-3 shadow-md transform -rotate-1 border-2 border-yellow-100">
                                                 {priceLabel}
                                             </div>
                                         )}
@@ -526,15 +521,15 @@
                                                     key={num}
                                                     onClick={() => handleNumberClick(num)}
                                                     className={`
-                                                        aspect-square rounded-xl flex items-center justify-center relative cursor-pointer transition-all duration-200
+                                                        aspect-square rounded-xl relative cursor-pointer transition-all duration-200
                                                         ${isSold 
                                                             ? 'bg-red-50 border-2 border-red-400 text-red-400' 
                                                             : 'bg-white border-2 border-gray-200 hover:border-indigo-400 hover:shadow-md text-gray-700'}
                                                     `}
                                                 >
-                                                    <span className={`font-bold text-lg leading-none ${isSold ? 'opacity-40' : ''}`}>
+                                                    <div className={`center-fix font-bold text-lg ${isSold ? 'opacity-40' : ''}`}>
                                                         {formatNumber(num)}
-                                                    </span>
+                                                    </div>
                                                     
                                                     {isSold && (
                                                         <div className="absolute inset-0 flex items-center justify-center animate-in zoom-in duration-200">
@@ -572,11 +567,15 @@
                                     
                                     <div className="mt-2 space-y-2 text-center pb-2">
                                         {bankAlias && (
-                                            <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg border border-gray-200">
-                                                <CreditCard size={16} className="text-gray-600" />
+                                            /* Solución ALIAS: Usamos 'flex' + 'mx-auto' en vez de inline-flex.
+                                               Fondo gris claro sólido y texto negro forzado. */
+                                            <div className="flex items-center justify-center gap-3 bg-gray-100 px-6 py-3 rounded-xl border-2 border-gray-200 mx-auto w-fit max-w-full">
+                                                <div className="shrink-0 text-gray-600">
+                                                    <CreditCard size={20} />
+                                                </div>
                                                 <div className="text-left">
-                                                    <p className="text-[10px] text-gray-500 uppercase font-bold leading-none">Alias / CBU</p>
-                                                    <p className="text-sm font-bold text-gray-800 leading-none mt-0.5">{bankAlias}</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase font-bold leading-tight">Alias / CBU</p>
+                                                    <p className="text-base font-black text-gray-900 leading-tight break-all">{bankAlias}</p>
                                                 </div>
                                             </div>
                                         )}
